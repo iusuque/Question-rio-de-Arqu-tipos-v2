@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qual é o seu Arquétipo de Hoje?</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for a playful look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to enhance the BuzzFeed look and feel */
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f7fafc;
+        }
+        .quiz-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .question-card {
+            border-bottom: 2px solid #f0f0f0;
+            padding: 2rem 1rem;
+            transition: background-color 0.3s;
+        }
+        .question-card:last-child {
+            border-bottom: none;
+        }
+        .question-options {
+            gap: 0.5rem; /* Spacing between buttons */
+        }
+        .option-btn {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s, background-color 0.2s;
+            border-radius: 12px;
+            padding: 0.75rem 0.25rem;
+            width: 100px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f3f4f6;
+            border: 2px solid transparent;
+            text-align: center;
+            font-weight: 700;
+            color: #4b5563;
+            cursor: pointer;
+        }
+        .option-btn .emoji {
+            font-size: 2.25rem;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        .option-btn .text {
+            font-size: 0.875rem;
+            line-height: 1.2;
+        }
+        .option-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+        }
+        .option-btn.selected {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.4);
+            color: #4f46e5;
+        }
+        .question-options .option-btn:not(.selected).answered {
+            opacity: 0.6;
+            transform: scale(0.95);
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .result-btn {
+            background: linear-gradient(45deg, #6d28d9, #be185d);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .result-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .result-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        #result-modal {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+        /* New, specific style for bonus buttons for better readability */
+        .bonus-btn {
+            background: linear-gradient(45deg, #6d28d9, #be185d);
+            color: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .bonus-btn:hover {
+             transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(99, 41, 158, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-indigo-50 min-h-screen flex items-center justify-center p-4">
+
+    <div id="quiz-app" class="quiz-container max-w-2xl w-full mx-auto">
+        <!-- Quiz Header -->
+        <div class="p-6 text-center bg-gradient-to-r from-purple-600 to-pink-600 text-white">
+            <h1 class="text-3xl md:text-4xl font-black">Qual é o seu Arquétipo de Hoje?</h1>
+            <p class="mt-2 text-lg">Responda 12 perguntas e descubra sua vibe do dia!</p>
+        </div>
+
+        <!-- Questions Area -->
+        <div id="questions-container" class="p-2 sm:p-4"></div>
+
+        <!-- Submission Button -->
+        <div class="p-6 text-center">
+            <button id="submit-btn" disabled class="result-btn text-white font-bold py-3 px-10 rounded-full text-xl shadow-lg">
+                Ver meu resultado!
+            </button>
+            <p id="progress-text" class="text-gray-500 mt-3 text-sm">Responda todas as perguntas para liberar.</p>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div id="result-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 text-center transform transition-all scale-95 opacity-0" id="modal-content-wrapper">
+            <!-- Final Result View -->
+            <div id="final-result-view">
+                <p class="text-2xl font-bold text-gray-500">Seu arquétipo de hoje é...</p>
+                <h2 id="archetype-title" class="text-5xl font-black my-4 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600"></h2>
+                <p id="archetype-emoji" class="text-7xl my-4"></p>
+                <p id="archetype-description" class="text-lg text-gray-700 leading-relaxed"></p>
+                <div class="mt-6 text-left">
+                    <h4 class="font-bold text-center mb-2">Sua pontuação completa:</h4>
+                    <div id="score-details" class="text-gray-600 grid grid-cols-2 gap-x-4 gap-y-1"></div>
+                </div>
+                <p id="tie-note" class="text-sm text-gray-500 mt-4 italic hidden">Houve um empate! O resultado mostra um dos seus arquétipos dominantes. Sinta qual deles mais ressoa com você hoje!</p>
+                <button onclick="restartQuiz()" class="mt-8 bg-indigo-600 text-white font-bold py-3 px-8 rounded-full hover:bg-indigo-700 transition-colors">
+                    Fazer o teste de novo
+                </button>
+            </div>
+            <!-- Bonus Question View -->
+            <div id="bonus-question-view" class="hidden">
+                <h2 class="text-2xl md:text-3xl font-black text-gray-800">Quase lá!</h2>
+                <p class="text-lg text-gray-600 my-4">Tivemos um empate. Para desempatar, responda:<br>Hoje você se sente mais...</p>
+                <div id="bonus-options-container" class="mt-6 flex flex-col sm:flex-row justify-center gap-4">
+                    <!-- Bonus options will be injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA ---
+        const archetypeMap = { '🌸': 'Inocente', '🧭': 'Explorador', '📖': 'Sábio', '🛡️': 'Herói', '💀': 'Fora-da-lei', '🔮': 'Mágico', '👥': 'Pessoa-comum', '❤️': 'Amante', '🤡': 'Bobo-da-corte', '🤝': 'Cuidador', '🎨': 'Criador', '👑': 'Regente' };
+        const descriptions = { 'Inocente': "Seu perfil de hoje é o Inocente! Você está sentindo uma vibe de pureza, otimismo e simplicidade. É um ótimo dia para criar conteúdo leve, que traga um sorriso ao rosto das pessoas e espalhe boas energias.", 'Explorador': "Seu perfil de hoje é o Explorador! A aventura te chama! Seu espírito anseia por novas experiências e descobertas. Que tal um vlog explorando um lugar novo ou testando um novo hobby?", 'Sábio': "Seu perfil de hoje é o Sábio! A busca por conhecimento e verdade está em alta. É o dia perfeito para compartilhar uma dica valiosa, um tutorial detalhado ou uma reflexão profunda.", 'Herói': "Seu perfil de hoje é o Herói! Com coragem e determinação, você está pronto para superar desafios. Inspire sua audiência com sua jornada de superação, mostre sua disciplina ou defenda uma causa.", 'Fora-da-lei': "Seu perfil de hoje é o Fora-da-lei! Rebelde e disruptivo, você está aqui para quebrar as regras. É hora de questionar o status quo, usar o humor ácido ou falar sobre temas tabu.", 'Mágico': "Seu perfil de hoje é o Mágico! A transformação está no ar. Use sua criatividade para encantar e surpreender. Tutoriais de 'antes e depois', truques de edição ou conteúdo visionário são a pedida.", 'Pessoa-comum': "Seu perfil de hoje é a Pessoa-comum! A conexão e a autenticidade são tudo. Mostre sua rotina, compartilhe suas experiências do dia a dia e crie um conteúdo com o qual todos possam se identificar.", 'Amante': "Seu perfil de hoje é o Amante! Paixão, intimidade e apreciação pela beleza definem seu dia. Fale sobre seus relacionamentos, seus hobbies favoritos ou crie um conteúdo esteticamente prazeroso.", 'Bobo-da-corte': "Seu perfil de hoje é o Bobo-da-corte! Viver o momento e espalhar alegria é sua missão. Sketches de humor, vídeos divertidos e memes são o caminho para alegrar o dia de todos.", 'Cuidador': "Seu perfil de hoje é o Cuidador! Generosidade e empatia estão em primeiro plano. Ofereça apoio, dê conselhos úteis ou crie um conteúdo que faça sua audiência se sentir acolhida e cuidada.", 'Criador': "Seu perfil de hoje é o Criador! A imaginação e a inovação estão borbulhando. Coloque a mão na massa! Faça um DIY, mostre seu processo criativo ou construa algo do zero.", 'Regente': "Seu perfil de hoje é o Regente! Liderança, controle e excelência são as palavras-chave. Organize algo, compartilhe dicas de produtividade ou crie um conteúdo que demonstre autoridade e confiança." };
+        const briefDescriptions = { 'Inocente': 'Puro e otimista', 'Explorador': 'Aventureiro e livre', 'Sábio': 'Sábio e reflexivo', 'Herói': 'Corajoso e determinado', 'Fora-da-lei': 'Rebelde e questionador', 'Mágico': 'Visionário e transformador', 'Pessoa-comum': 'Autêntico e conectado', 'Amante': 'Apaixonado e intenso', 'Bobo-da-corte': 'Divertido e espontâneo', 'Cuidador': 'Generoso e empático', 'Criador': 'Inovador e imaginativo', 'Regente': 'Líder e confiante' };
+        const proximityMap = { 'Inocente': ['Amante', 'Explorador'], 'Explorador': ['Fora-da-lei', 'Inocente'], 'Sábio': ['Mágico', 'Cuidador'], 'Herói': ['Criador', 'Fora-da-lei'], 'Fora-da-lei': ['Explorador', 'Herói'], 'Mágico': ['Sábio', 'Criador'], 'Pessoa-comum': ['Cuidador', 'Amante'], 'Amante': ['Inocente', 'Pessoa-comum'], 'Bobo-da-corte': ['Explorador', 'Criador'], 'Cuidador': ['Pessoa-comum', 'Sábio'], 'Criador': ['Herói', 'Mágico'], 'Regente': ['Amante', 'Fora-da-lei'] };
+        const questions = [ { text: "O que te inspira ao acordar?", options: [ { emoji: '🌸', text: 'Simplicidade' }, { emoji: '🧭', text: 'Aventura' }, { emoji: '📖', text: 'Conhecimento' }, { emoji: '🛡️', text: 'Superação' } ] }, { text: "Onde você prefere canalizar sua energia hoje?", options: [ { emoji: '💀', text: 'Quebrar Regras' }, { emoji: '🔮', text: 'Transformar' }, { emoji: '👥', text: 'Conectar' }, { emoji: '❤️', text: 'Sentir Paixão' } ] }, { text: "Qual papel você sente vontade de assumir agora?", options: [ { emoji: '🤡', text: 'O Divertido' }, { emoji: '🤝', text: 'O Apoiador' }, { emoji: '🎨', text: 'O Inventor' }, { emoji: '👑', text: 'O Líder' } ] }, { text: "O que faria seu dia mais leve?", options: [ { emoji: '🌸', text: 'Coisas Simples' }, { emoji: '🔮', text: 'Um Toque de Magia' }, { emoji: '👥', text: 'Pessoas Reais' }, { emoji: '🛡️', text: 'Vencer Desafios' } ] }, { text: "Como você quer interagir com sua audiência hoje?", options: [ { emoji: '🧭', text: 'Explorando' }, { emoji: '📖', text: 'Ensinando' }, { emoji: '❤️', text: 'Com Afeto' }, { emoji: '🤡', text: 'Fazendo Rir' } ] }, { text: "Que tom de conteúdo combina com seu humor atual?", options: [ { emoji: '💀', text: 'Provocador' }, { emoji: '🤝', text: 'Acolhedor' }, { emoji: '🎨', text: 'Criativo' }, { emoji: '👑', text: 'Confiante' } ] }, { text: "Onde está seu foco criativo neste momento?", options: [ { emoji: '🌸', text: 'Na Beleza Simples' }, { emoji: '📖', text: 'Em Ideias' }, { emoji: '🤡', text: 'No Humor' }, { emoji: '🎨', text: 'Na Criação' } ] }, { text: "Que motivação externa você busca hoje?", options: [ { emoji: '🧭', text: 'Novos Horizontes' }, { emoji: '💀', text: 'Mudar o Sistema' }, { emoji: '🤝', text: 'Ajudar Alguém' }, { emoji: '👑', text: 'Sucesso' } ] }, { text: "Qual abordagem de tema lhe atrai mais agora?", options: [ { emoji: '🛡️', text: 'Jornada de Superação' }, { emoji: '🔮', text: 'Mistérios' }, { emoji: '👥', text: 'Dia a Dia' }, { emoji: '❤️', text: 'Relacionamentos' } ] }, { text: "Que tipo de brincadeira ou desafio te anima?", options: [ { emoji: '🌸', text: 'Algo Leve' }, { emoji: '🧭', text: 'Uma Expedição' }, { emoji: '🔮', text: 'Um Truque' }, { emoji: '🤡', text: 'Uma Pegadinha' } ] }, { text: "Que perspectiva você quer oferecer ao público?", options: [ { emoji: '📖', text: 'Sabedoria' }, { emoji: '💀', text: 'Visão Crítica' }, { emoji: '🤝', text: 'Apoio' }, { emoji: '❤️', text: 'Intensidade' } ] }, { text: "Que estilo visual você gostaria de explorar?", options: [ { emoji: '🎨', text: 'Artístico' }, { emoji: '👑', text: 'Elegante' }, { emoji: '🛡️', text: 'Épico' }, { emoji: '👥', text: 'Autêntico' } ] } ];
+        let scores = {};
+        let answeredQuestions = 0;
+
+        function initializeQuiz() {
+            Object.values(archetypeMap).forEach(archetype => { scores[archetype] = 0; });
+            answeredQuestions = 0;
+            const questionsContainer = document.getElementById('questions-container');
+            questionsContainer.innerHTML = '';
+            questions.forEach((q, index) => {
+                const card = document.createElement('div'); card.className = 'question-card'; card.id = `question-${index}`;
+                const questionText = document.createElement('h3'); questionText.className = 'text-xl font-bold text-gray-800 text-center'; questionText.textContent = `${index + 1}. ${q.text}`; card.appendChild(questionText);
+                const optionsDiv = document.createElement('div'); optionsDiv.className = 'question-options mt-6 flex flex-wrap justify-center items-center'; card.appendChild(optionsDiv);
+                q.options.forEach(option => { const button = document.createElement('button'); button.className = 'option-btn'; button.innerHTML = `<span class="emoji">${option.emoji}</span><span class="text">${option.text}</span>`; button.onclick = () => selectAnswer(index, option.emoji, button); optionsDiv.appendChild(button); });
+                questionsContainer.appendChild(card);
+            });
+            updateProgress();
+            document.getElementById('result-modal').classList.add('hidden'); document.getElementById('result-modal').classList.remove('flex');
+            const modalWrapper = document.getElementById('modal-content-wrapper'); modalWrapper.classList.add('scale-95', 'opacity-0');
+        }
+
+        function selectAnswer(questionIndex, emoji, selectedButton) {
+            const questionCard = document.getElementById(`question-${questionIndex}`);
+            if (questionCard.classList.contains('answered')) return;
+            questionCard.classList.add('answered');
+            answeredQuestions++;
+            scores[archetypeMap[emoji]]++;
+            const buttons = questionCard.querySelectorAll('.option-btn');
+            buttons.forEach(btn => { btn.classList.add('answered'); if (btn === selectedButton) { btn.classList.add('selected'); } });
+            const nextQuestion = document.getElementById(`question-${questionIndex + 1}`);
+            if(nextQuestion) { setTimeout(() => { nextQuestion.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const submitBtn = document.getElementById('submit-btn'); const progressText = document.getElementById('progress-text');
+            if (answeredQuestions === questions.length) {
+                submitBtn.disabled = false; progressText.textContent = 'Tudo pronto! Clique para ver seu resultado!'; progressText.classList.add('text-green-600', 'font-bold');
+            } else {
+                submitBtn.disabled = true; progressText.textContent = `Responda mais ${questions.length - answeredQuestions} pergunta(s) para liberar.`; progressText.classList.remove('text-green-600', 'font-bold');
+            }
+        }
+
+        function handleResults() {
+            let maxScore = 0; let winners = [];
+            for (const archetype in scores) {
+                if (scores[archetype] > maxScore) { maxScore = scores[archetype]; winners = [archetype]; }
+                else if (scores[archetype] === maxScore && maxScore > 0) { winners.push(archetype); }
+            }
+
+            if (winners.length === 1) {
+                displayFinalResult(winners[0], false);
+                return;
+            }
+
+            // --- TIE-BREAKER LOGIC ---
+            const helpers = Object.entries(scores).filter(([name, score]) => score > 0 && !winners.includes(name)).sort((a, b) => b[1] - a[1]);
+            let tieBroken = false;
+            for (const [helperName, _] of helpers) {
+                let neighborOfCount = 0;
+                let lastNeighborFound = null;
+                for(const winner of winners) {
+                    if (proximityMap[winner].includes(helperName)) {
+                        neighborOfCount++;
+                        lastNeighborFound = winner;
+                    }
+                }
+                if (neighborOfCount === 1) {
+                    scores[lastNeighborFound]++; // Transfer point
+                    tieBroken = true;
+                    displayFinalResult(lastNeighborFound, false);
+                    break;
+                }
+            }
+            
+            if (!tieBroken) {
+                 if (winners.length > 0) {
+                    displayBonusQuestion(winners);
+                } else {
+                    // Handle case with no points at all
+                    displayFinalResult(Object.keys(archetypeMap)[0], true);
+                }
+            }
+        }
+        
+        function displayBonusQuestion(tiedArchetypes) {
+            document.getElementById('final-result-view').classList.add('hidden');
+            const bonusView = document.getElementById('bonus-question-view');
+            const bonusOptionsContainer = document.getElementById('bonus-options-container');
+            bonusOptionsContainer.innerHTML = '';
+
+            tiedArchetypes.forEach(archetype => {
+                const emoji = Object.keys(archetypeMap).find(key => archetypeMap[key] === archetype);
+                const button = document.createElement('button');
+                // The 'option-btn' class provides the structure, 'bonus-btn' adds the high-contrast styling
+                button.className = 'option-btn bonus-btn w-36';
+                // Using white text classes with opacity for the subtitle for better contrast
+                button.innerHTML = `<span class="emoji">${emoji}</span><span class="text font-bold text-white">${archetype}<br><em class="font-normal text-xs text-white/90">${briefDescriptions[archetype]}</em></span>`;
+                button.onclick = () => {
+                    scores[archetype]++;
+                    displayFinalResult(archetype, true);
+                };
+                bonusOptionsContainer.appendChild(button);
+            });
+
+            bonusView.classList.remove('hidden');
+            openModal();
+        }
+
+        function displayFinalResult(finalArchetype, wasTie) {
+            document.getElementById('bonus-question-view').classList.add('hidden');
+            const finalView = document.getElementById('final-result-view');
+            
+            const finalEmoji = Object.keys(archetypeMap).find(key => archetypeMap[key] === finalArchetype);
+            document.getElementById('archetype-title').textContent = finalArchetype;
+            document.getElementById('archetype-emoji').textContent = finalEmoji;
+            document.getElementById('archetype-description').textContent = descriptions[finalArchetype];
+            document.getElementById('tie-note').classList.toggle('hidden', !wasTie);
+
+            const scoreDetailsContainer = document.getElementById('score-details');
+            scoreDetailsContainer.innerHTML = '';
+            const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+            sortedScores.forEach(([archetype, score]) => {
+                const scoreLine = document.createElement('div');
+                scoreLine.innerHTML = `<strong class="${score > 0 ? 'text-indigo-600' : ''}">${archetype}:</strong> ${score} ponto(s)`;
+                scoreDetailsContainer.appendChild(scoreLine);
+            });
+
+            finalView.classList.remove('hidden');
+            openModal();
+        }
+
+        function openModal() {
+            const modal = document.getElementById('result-modal');
+            const modalWrapper = document.getElementById('modal-content-wrapper');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => { modalWrapper.classList.remove('scale-95', 'opacity-0'); }, 50);
+        }
+
+        function restartQuiz() {
+            initializeQuiz();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', handleResults);
+        window.onload = initializeQuiz;
+    </script>
+</body>
+</html>
